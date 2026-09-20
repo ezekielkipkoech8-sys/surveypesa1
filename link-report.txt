@@ -1,0 +1,7 @@
+﻿Files scanned: 65   Link refs checked: 3071
+Auto-redirect stub pages: 25
+
+=== MISSING LOCAL TARGETS (0) ===
+
+=== LEFTOVER ABSOLUTE LIVE-SITE URLS IN ATTRIBUTES (1) ===
+ABSOLUTE: https://surveypesa.co.ke/wp-json/metform/v1/entries/insert/437  <-  contact-us.html

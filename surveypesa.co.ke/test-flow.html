@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SurveyPesa — payment flow test hub</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; padding: 2rem 1rem 4rem; background: #f5f6f8; color: #222; }
+    main { max-width: 46rem; margin: 0 auto; }
+    h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
+    .sub { color: #555; margin: 0 0 1.5rem; }
+    .prereq { background: #fff8e1; border: 1px solid #f0d47a; border-radius: 8px; padding: .75rem 1rem; margin-bottom: 1.75rem; font-size: .92rem; }
+    .prereq code { background: #f1f3f5; padding: .05rem .35rem; border-radius: 4px; }
+    h2 { font-size: 1.05rem; margin: 1.75rem 0 .5rem; padding-bottom: .25rem; border-bottom: 2px solid #dde1e6; }
+    ul.cards { list-style: none; margin: 0; padding: 0; }
+    ul.cards li { background: #fff; border: 1px solid #e2e5e9; border-left: 4px solid #999; border-radius: 8px; padding: .8rem 1rem; margin-bottom: .6rem; }
+    .entry li { border-left-color: #4c6ef5; }
+    .pay li { border-left-color: #2f9e44; }
+    .flow li { border-left-color: #e8590c; }
+    .dev li { border-left-color: #862e9c; }
+    .name { font-weight: 600; }
+    .name a { color: #1864ab; text-decoration: none; }
+    .name a:hover { text-decoration: underline; }
+    .price { display: inline-block; background: #e7f5ee; color: #1b7a4b; border-radius: 999px; padding: .05rem .55rem; font-size: .78rem; font-weight: 600; margin-left: .4rem; vertical-align: middle; }
+    .file { font-family: ui-monospace, Consolas, monospace; font-size: .78rem; color: #666; margin-left: .4rem; }
+    .note { font-size: .85rem; color: #555; margin-top: .3rem; }
+    .note b { color: #333; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>SurveyPesa — payment flow test hub</h1>
+    <p class="sub">Click through the payment/activation flow in order. Every link opens in a new tab so this page stays put.</p>
+
+    <div class="prereq">
+      Before testing payments: start the backend (<code>cd surveypesa-backend &amp;&amp; npm start</code>, port <code>3001</code>)
+      and make sure <code>sp-config.js</code> <code>apiBase</code> points at it. The payment pages talk to
+      <code>POST /api/stk/initiate</code> and poll <code>GET /api/stk/status/:reference</code>.
+    </div>
+
+    <h2>1 · Entry points</h2>
+    <ul class="cards entry">
+      <li>
+        <span class="name"><a href="index.html" target="_blank" rel="noopener">Homepage</a></span>
+        <span class="file">index.html</span>
+        <div class="note"><b>Success:</b> loads cleanly (no CORS/console errors); the activation CTAs lead to the activation / pay pages.</div>
+      </li>
+      <li>
+        <span class="name"><a href="activation.html" target="_blank" rel="noopener">Activation landing</a></span>
+        <span class="file">activation.html</span>
+        <div class="note"><b>Success:</b> renders the activation page and its links to the payment pages (pay.html, pay-99.html, pay-149.html) all work.</div>
+      </li>
+    </ul>
+    <h2>2 · Payment pages (STK push → local backend)</h2>
+    <ul class="cards pay">
+      <li>
+        <span class="name"><a href="pay.html" target="_blank" rel="noopener">Pay page (realigned to Lite)</a></span>
+        <span class="price">Ksh 99</span>
+        <span class="file">pay.html</span>
+        <div class="note"><b>Success:</b> shows the readonly amount <b>99</b> and a “Pay KSh 99” button; submitting a 07…/2547… number shows “STK push sent…”, then the poll result. Legacy KSh 49 content must be gone.</div>
+      </li>
+      <li>
+        <span class="name"><a href="pay-99.html" target="_blank" rel="noopener">Lite activation</a></span>
+        <span class="price">Ksh 99</span>
+        <span class="file">pay-99.html</span>
+        <div class="note"><b>Success:</b> readonly amount 99; submit → STK prompt on the entered number; status moves to “Waiting for confirmation…”; on webhook success shows the M-Pesa receipt, then redirects to /users.</div>
+      </li>
+      <li>
+        <span class="name"><a href="pay-149.html" target="_blank" rel="noopener">Standard activation</a></span>
+        <span class="price">Ksh 149</span>
+        <span class="file">pay-149.html</span>
+        <div class="note"><b>Success:</b> same flow as Lite, but the readonly amount shows <b>149</b> and the button says “Pay KSh 149”.</div>
+      </li>
+      <li>
+        <span class="name"><a href="pay-199.html" target="_blank" rel="noopener">Premium activation</a></span>
+        <span class="price">Ksh 199</span>
+        <span class="file">pay-199.html</span>
+        <div class="note"><b>Success:</b> same flow with readonly amount <b>199</b> and “Pay KSh 199”; page title reads “Pay 199 - Survey Pesa”. (Newest page — check it looks identical to pay-99/pay-149 apart from the price.)</div>
+      </li>
+    </ul>
+
+    <h2>3 · Other flow pages</h2>
+    <ul class="cards flow">
+      <li>
+        <span class="name"><a href="paid-surveys.html" target="_blank" rel="noopener">Dashboard / wallet (mock)</a></span>
+        <span class="file">paid-surveys.html</span>
+        <div class="note"><b>Success:</b> renders the tabs (Home / Wallet / Refer / Profile); the withdrawal form validates locally but intentionally sends nothing (mock — no backend wiring, no network calls).</div>
+      </li>
+      <li>
+        <span class="name"><a href="users.html" target="_blank" rel="noopener">Post-payment destination</a></span>
+        <span class="file">users.html</span>
+        <div class="note"><b>Success:</b> loads — this is where sp-stk.js redirects after a confirmed payment (<code>redirectUrl</code> in sp-config.js). Reached after a real success, not linked from menus.</div>
+      </li>
+    </ul>
+
+    <h2>4 · Developer quick checks</h2>
+    <ul class="cards dev">
+      <li>
+        <span class="name"><a href="http://localhost:3001/" target="_blank" rel="noopener">Backend placeholder</a></span>
+        <span class="file">http://localhost:3001/</span>
+        <div class="note"><b>Success:</b> the “SurveyPesa HashBack backend” page loads — proves surveypesa-backend is running before you test a payment.</div>
+      </li>
+      <li>
+        <span class="name"><a href="sp-config.js" target="_blank" rel="noopener">sp-config.js (single config source)</a></span>
+        <span class="file">sp-config.js</span>
+        <div class="note"><b>Success:</b> <code>apiBase</code> points where you’re testing (localhost:3001 for dev). One line to change for production.</div>
+      </li>
+    </ul>
+
+  </main>
+</body>
+</html>

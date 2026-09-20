@@ -1,0 +1,68 @@
+HTTrack3.49-2+htsswf+htsjava launched on Thu, 17 Sep 2026 16:26:01 at https://surveypesa.co.ke/ +*.png +*.gif +*.jpg +*.jpeg +*.css +*.js -ad.doubleclick.net/* -mime:application/foobar
+(winhttrack -qwC2%Ps2u1%s%uN0%I0p3DaK0H0%kf2A25000%f#f -F "Mozilla/4.5 (compatible; HTTrack 3.0x; Windows 98)" -%F "<!-- Mirrored from %s%s by HTTrack Website Copier/3.x [XR&CO'2014], %s -->" -%l "en, *" https://surveypesa.co.ke/ -O1 "C:\My Web Sites\https___surveypesa.co.ke_" +*.png +*.gif +*.jpg +*.jpeg +*.css +*.js -ad.doubleclick.net/* -mime:application/foobar )
+
+Information, Warnings and Errors reported for this mirror:
+note:	the hts-log.txt file, and hts-cache folder, may contain sensitive information,
+	such as username/password authentication for websites mirrored in this project
+	do not share these files/folders if you want these information to remain private
+
+16:28:40	Error: 	"Forbidden" (403) at link https://surveypesa.co.ke/xmlrpc.php?rsd (from https://surveypesa.co.ke/)
+16:30:14	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=61
+16:30:14	Warning: 	File has moved from https://surveypesa.co.ke/?p=61 to https://surveypesa.co.ke/survey-registration
+16:30:37	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=429
+16:30:37	Warning: 	File has moved from https://surveypesa.co.ke/?p=429 to https://surveypesa.co.ke/contact-us
+16:30:37	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=432
+16:30:37	Warning: 	File has moved from https://surveypesa.co.ke/?p=432 to https://surveypesa.co.ke/survey-scam-protection
+16:30:37	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=687
+16:30:37	Warning: 	File has moved from https://surveypesa.co.ke/?p=687 to https://surveypesa.co.ke/about-survey-money
+16:30:37	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=1687
+16:30:37	Warning: 	File has moved from https://surveypesa.co.ke/?p=1687 to https://surveypesa.co.ke/users
+16:30:37	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=1707
+16:30:37	Warning: 	File has moved from https://surveypesa.co.ke/?p=1707 to https://surveypesa.co.ke/pay
+16:30:37	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=1708
+16:30:37	Warning: 	File has moved from https://surveypesa.co.ke/?p=1708 to https://surveypesa.co.ke/pay-99
+16:30:37	Error: 	"Not Found" (404) at link https://surveypesa.co.ke/wp-content/cache/wpo-minify/1786367125/assets/wpo-minify-header-elementor-post-17091788953347.min.css (from https://surveypesa.co.ke/pay-149)
+16:30:37	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=1709
+16:30:37	Warning: 	File has moved from https://surveypesa.co.ke/?p=1709 to https://surveypesa.co.ke/pay-149
+16:30:37	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=448
+16:30:37	Warning: 	File has moved from https://surveypesa.co.ke/?p=448 to https://surveypesa.co.ke/terms-and-conditions
+16:30:37	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=484
+16:30:37	Warning: 	File has moved from https://surveypesa.co.ke/?p=484 to https://surveypesa.co.ke/privacy-policy
+16:30:49	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=1571
+16:30:49	Warning: 	File has moved from https://surveypesa.co.ke/?p=1571 to https://surveypesa.co.ke/online-jobs-in-kenya-using-your-smartphone
+16:30:51	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=1629
+16:30:51	Warning: 	File has moved from https://surveypesa.co.ke/?p=1629 to https://surveypesa.co.ke/surveypesa-vs-ysense-which-one-pays-faster
+16:30:54	Error: 	"Not Found" (404) at link https://surveypesa.co.ke/registration (from https://surveypesa.co.ke/surveypesa-vs-ysense-which-one-pays-faster)
+16:30:54	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=1626
+16:30:54	Warning: 	File has moved from https://surveypesa.co.ke/?p=1626 to https://surveypesa.co.ke/surveypesa-vs-toluna-which-survey-site-works-best-in-kenya
+16:30:54	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=1623
+16:30:54	Warning: 	File has moved from https://surveypesa.co.ke/?p=1623 to https://surveypesa.co.ke/surveypesa-vs-swagbucks-can-kenyans-really-earn-more-locally
+16:30:54	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=1586
+16:30:54	Warning: 	File has moved from https://surveypesa.co.ke/?p=1586 to https://surveypesa.co.ke/chat-online-and-get-paid-in-kenya
+16:30:54	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=1591
+16:30:54	Warning: 	File has moved from https://surveypesa.co.ke/?p=1591 to https://surveypesa.co.ke/get-paid-to-chat-in-kenya-the-truth-about-chat-jobs-no-experience-needed
+16:30:58	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=32
+16:30:58	Warning: 	File has moved from https://surveypesa.co.ke/?p=32 to https://surveypesa.co.ke/paid-surveys
+16:30:58	Error: 	"Not Found" (404) at link https://surveypesa.co.ke/FAVICON (from https://surveypesa.co.ke/paid-surveys)
+16:31:03	Error: 	"Not Found" (404) at link https://surveypesa.co.ke/SUPPORT_LINK (from https://surveypesa.co.ke/paid-surveys)
+16:31:03	Error: 	"Not Found" (404) at link https://surveypesa.co.ke/TERMS_LINK (from https://surveypesa.co.ke/paid-surveys)
+16:31:03	Error: 	"Not Found" (404) at link https://surveypesa.co.ke/PRIVACY_LINK (from https://surveypesa.co.ke/paid-surveys)
+16:31:03	Error: 	"Not Found" (404) at link https://surveypesa.co.ke/ABOUT_LINK (from https://surveypesa.co.ke/paid-surveys)
+16:31:03	Error: 	"Not Found" (404) at link https://surveypesa.co.ke/LOGOUT_LINK (from https://surveypesa.co.ke/paid-surveys)
+16:31:10	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=1611
+16:31:10	Warning: 	File has moved from https://surveypesa.co.ke/?p=1611 to https://surveypesa.co.ke/surveys-for-gift-cards
+16:31:15	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=18
+16:31:15	Warning: 	File has moved from https://surveypesa.co.ke/?p=18 to https://surveypesa.co.ke/activation
+16:31:15	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=1604
+16:31:15	Warning: 	File has moved from https://surveypesa.co.ke/?p=1604 to https://surveypesa.co.ke/paid-online-surveys
+16:31:19	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=1615
+16:31:19	Warning: 	File has moved from https://surveypesa.co.ke/?p=1615 to https://surveypesa.co.ke/survey-and-earn-daily-how-to-make-ksh-500-per-day-in-kenya
+16:31:23	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=1602
+16:31:23	Warning: 	File has moved from https://surveypesa.co.ke/?p=1602 to https://surveypesa.co.ke/money-for-surveys
+16:31:27	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=1617
+16:31:27	Warning: 	File has moved from https://surveypesa.co.ke/?p=1617 to https://surveypesa.co.ke/are-online-surveys-legit
+16:31:29	Warning: 	Moved Permanently for https://surveypesa.co.ke/?p=1597
+16:31:29	Warning: 	File has moved from https://surveypesa.co.ke/?p=1597 to https://surveypesa.co.ke/survey-and-earn-in-kenya
+
+HTTrack Website Copier/3.49-2 mirror complete in 5 minutes 29 seconds : 322 links scanned, 288 files written (19535005 bytes overall) [9159103 bytes received at 27839 bytes/sec], 17756186 bytes transferred using HTTP compression in 253 files, ratio 38%, 7.9 requests per connection
+(9 errors, 48 warnings, 0 messages)
