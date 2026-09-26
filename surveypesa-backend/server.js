@@ -22,6 +22,7 @@ require('dotenv').config();
 
 const express = require('express');
 const crypto = require('crypto');
+const fs = require('fs');
 const path = require('path');
 
 const app = express();
@@ -31,7 +32,10 @@ const HASHBACK_API_KEY = process.env.HASHBACK_API_KEY || '';
 const HASHBACK_ACCOUNT_ID = process.env.HASHBACK_ACCOUNT_ID || '';
 const HASHBACK_WEBHOOK_SECRET = process.env.HASHBACK_WEBHOOK_SECRET || '';
 
-const HASHBACK_STK_URL = 'https://api.hashback.co.ke/initiatestk';
+// Verified against the official docs (https://hashback.co.ke/documentation ->
+// "Initiate STK Push"). Overridable via .env so the value lives in one place
+// and matches ../stk-push-server; the hardcoded value is the documented route.
+const HASHBACK_STK_URL = process.env.HASHBACK_STK_URL || 'https://api.hashback.co.ke/initiatestk';
 
 /* ------------------------------------------------------------------ */
 /* Activation tiers                                                    */
@@ -40,7 +44,13 @@ const HASHBACK_STK_URL = 'https://api.hashback.co.ke/initiatestk';
 // Lite / Standard / Premium activation prices. This site has NO
 // user-entered pricing, so there is no reason to trust the client on
 // amount — any other value is rejected outright.
-const ALLOWED_AMOUNTS = [99, 149, 199];
+//
+// The numbers live in pricing.json (single source of truth) rather than
+// being hardcoded here, so the backend, the HTML tier pages and any future
+// consumer cannot drift apart. _test-pricing-sync.mjs fails the build if
+// the pages and this file ever disagree.
+const PRICING = JSON.parse(fs.readFileSync(path.join(__dirname, 'pricing.json'), 'utf8'));
+const ALLOWED_AMOUNTS = PRICING.tiers.map(function (t) { return t.amount; });
 
 // Safaricom STK push expects 2547XXXXXXXX / 2541XXXXXXXX.
 const MSISDN_RE = /^254[71]\d{8}$/;
@@ -60,6 +70,29 @@ const orders = new Map();
  */
 function generateReference() {
   return 'SP-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
+/* ------------------------------------------------------------------ */
+/* Provider logging                                                    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Masks a secret so log output is safe to paste into a bug report. Keeps
+ * enough of the value to tell two keys apart, never enough to use one.
+ */
+function mask(value) {
+  if (!value) return '(empty)';
+  const s = String(value);
+  if (s.length <= 8) return '*'.repeat(s.length);
+  return s.slice(0, 4) + '...' + s.slice(-2) + ' [len ' + s.length + ']';
+}
+
+/** Renders a body for a single log line, truncating pathological responses. */
+function readable(value, max) {
+  const limit = max || 2000;
+  if (value === null || value === undefined) return '(null)';
+  const s = typeof value === 'string' ? value : JSON.stringify(value);
+  return s.length > limit ? s.slice(0, limit) + '…[truncated]' : s;
 }
 
 /* ------------------------------------------------------------------ */
@@ -231,25 +264,61 @@ app.post('/api/stk/initiate', async function (req, res) {
   orders.set(reference, order);
 
   /* --- forward the STK push to HashBack ------------------------------ */
+  // The exact body we are about to send. Kept as a variable so the log
+  // below and the wire payload cannot drift apart.
+  const providerPayload = {
+    api_key: HASHBACK_API_KEY,
+    account_id: HASHBACK_ACCOUNT_ID,
+    amount: amount,
+    msisdn: msisdn,
+    reference: reference
+  };
+
+  // Log the OUTGOING request before sending it. The api_key is masked.
+  // msisdn is printed with its length and a digits-only check because a
+  // wrong format here is the single most common cause of a silent no-prompt.
+  const startedAt = performance.now();
+  console.log(
+    '[stk] -> POST ' + HASHBACK_STK_URL +
+    '\n       msisdn      = ' + msisdn +
+    '  (len ' + msisdn.length + ', digitsOnly=' + /^[0-9]+$/.test(msisdn) +
+    ', matchesMSISDN_RE=' + MSISDN_RE.test(msisdn) + ')' +
+    '\n       amount      = ' + JSON.stringify(amount) + '  (typeof ' + typeof amount + ')' +
+    '\n       account_id  = ' + HASHBACK_ACCOUNT_ID +
+    '\n       api_key     = ' + mask(HASHBACK_API_KEY) +
+    '\n       reference   = ' + reference
+  );
+  console.log(
+    '[stk] -> headers   { "Content-Type": "application/json" }' +
+    '\n       body       ' + readable(Object.assign({}, providerPayload, {
+      api_key: mask(providerPayload.api_key)
+    }))
+  );
+
   try {
     const response = await fetch(HASHBACK_STK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        api_key: HASHBACK_API_KEY,
-        account_id: HASHBACK_ACCOUNT_ID,
-        amount: amount,
-        msisdn: msisdn,
-        reference: reference
-      }),
+      body: JSON.stringify(providerPayload),
       signal: AbortSignal.timeout(15000)
     });
 
+    // Read the body as TEXT first. response.json() silently discards
+    // non-JSON replies (an HTML error page from a proxy, a plain-text
+    // rejection) — exactly the responses you most need to see.
+    const rawBody = await response.text();
+
+    console.log(
+      '[stk] <- HTTP ' + response.status + ' ' + (response.statusText || '') +
+      ' in ' + Math.round(performance.now() - startedAt) + 'ms'
+    );
+    console.log('[stk] <- raw body: ' + readable(rawBody || '(empty body)'));
+
     let data = null;
     try {
-      data = await response.json();
+      data = rawBody ? JSON.parse(rawBody) : null;
     } catch (parseErr) {
-      // Non-JSON body — data stays null; still logged below with the status.
+      // Non-JSON body — data stays null; the raw text above is the evidence.
     }
 
     // Success = a checkout id under any of the spellings HashBack might
@@ -261,6 +330,17 @@ app.post('/api/stk/initiate', async function (req, res) {
       data?.ResponseCode === 0 ||
       data?.ResponseCode === '0' ||
       data?.success === true;
+
+    // The verdict, and WHICH rule produced it. "ACCEPTED" only means HashBack
+    // took the request — per HashBack's own docs that is an acknowledgement,
+    // NOT a payment and NOT proof that a prompt reached the handset.
+    console.log(
+      '[stk] == verdict: ' + (success ? 'ACCEPTED' : 'REJECTED') +
+      ' | checkout_id=' + (checkoutId || '(none)') +
+      ' | ResponseCode=' + readable(data?.ResponseCode) +
+      ' | ResponseDescription=' + readable(data?.ResponseDescription) +
+      ' | CustomerMessage=' + readable(data?.CustomerMessage)
+    );
 
     if (!success) {
       // HashBack answered but did NOT indicate success. Log the HTTP status

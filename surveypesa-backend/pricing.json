@@ -1,0 +1,22 @@
+{
+  "_comment": [
+    "SINGLE SOURCE OF TRUTH for SurveyPesa (surveypesa.co.ke) pricing.",
+    "Consumed by surveypesa-backend/server.js for request validation, and",
+    "checked against the real HTML pages by _test-pricing-sync.mjs so the",
+    "tier price can never silently drift again.",
+    "",
+    "This file is for the SurveyPesa product ONLY. The Hela Sasa product has",
+    "its own pricing in ../stk-push-server/server.js (ALLOWED_TIERS) and is",
+    "deliberately NOT kept in sync - they are separate sites on a shared",
+    "HashBack account, distinguishable by the SP- / HS- reference prefixes."
+  ],
+  "currency": "KES",
+  "tiers": [
+    { "key": "lite",     "amount": 99,  "label": "Lite Activation",     "page": "pay-99.html"  },
+    { "key": "standard", "amount": 149, "label": "Standard Activation", "page": "pay-149.html" },
+    { "key": "premium",  "amount": 199, "label": "Premium Activation",  "page": "pay-199.html" }
+  ],
+  "legacyPages": [
+    { "page": "pay.html", "amount": 99, "note": "legacy page realigned to the Lite tier (was KSh 49)" }
+  ]
+}

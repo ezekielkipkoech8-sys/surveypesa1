@@ -8,11 +8,26 @@
  *   GET  /health        -> quick check that the server is running and configured
  *   POST /api/stk-push  -> body: { phone, amount?, tier }  (tier: 49 | 99 | 149)
  *
+ * Provider: HashBack "Initiate STK Push"
+ *   POST https://api.hashback.co.ke/initiatestk
+ *   Header : Content-Type: application/json ONLY. The key travels in the body
+ *            as `api_key`; `Authorization: Bearer` is NOT used by this endpoint
+ *            (HashBack reserves Bearer for its SMS API under /sms/*).
+ *   Body   : api_key, account_id, amount, msisdn, reference - all required,
+ *            all typed as strings by HashBack.
+ *   Docs   : https://hashback.co.ke/documentation
+ *
+ * NOTE: HashBack marks these low-level STK endpoints as being phased out in
+ * favour of their Payment Button SDK (hashpay.js). The endpoint still works
+ * for existing integrations, but check with them before a new go-live.
+ *
  * Configuration lives in .env:
- *   PORT=3000
- *   HASHBACK_API_KEY=your_api_key_here
- *   HASHBACK_STK_ENDPOINT=your_hashback_stk_endpoint_here
- *   CORS_ORIGIN=            (optional; comma-separated allow-list)
+ *   PORT=3000                            (optional)
+ *   HASHBACK_API_KEY=...                 (required)
+ *   HASHBACK_ACCOUNT_ID=...              (required)  your HashPay Account ID
+ *   HASHBACK_STK_ENDPOINT=...            (required)
+ *   CORS_ORIGIN=                         (optional; comma-separated allow-list)
+ *   DRY_RUN=1                            (optional; build+log the request, send nothing)
  */
 
 require('dotenv').config();
@@ -25,7 +40,15 @@ const app = express();
 
 const PORT = Number(process.env.PORT) || 3000;
 const HASHBACK_API_KEY = process.env.HASHBACK_API_KEY || '';
+const HASHBACK_ACCOUNT_ID = process.env.HASHBACK_ACCOUNT_ID || '';
 const HASHBACK_STK_ENDPOINT = process.env.HASHBACK_STK_ENDPOINT || '';
+
+/**
+ * DRY_RUN=1 builds and logs the outgoing request but never opens a socket.
+ * Use it to inspect the exact endpoint/headers/body without spending money
+ * or texting a real handset. See _mock-hashback.mjs for the end-to-end test.
+ */
+const DRY_RUN = /^(1|true|yes)$/i.test(String(process.env.DRY_RUN || '').trim());
 
 /** Activation tiers offered on the activation page (KSh). */
 const ALLOWED_TIERS = [49, 99, 149];
@@ -60,10 +83,50 @@ app.use(express.urlencoded({ extended: true }));
 function isConfigured() {
   return (
     HASHBACK_API_KEY.length > 0 &&
+    HASHBACK_ACCOUNT_ID.length > 0 &&
     !PLACEHOLDER_RE.test(HASHBACK_API_KEY) &&
+    !PLACEHOLDER_RE.test(HASHBACK_ACCOUNT_ID) &&
     /^https?:\/\//i.test(HASHBACK_STK_ENDPOINT) &&
     !PLACEHOLDER_RE.test(HASHBACK_STK_ENDPOINT)
   );
+}
+
+/**
+ * Unique transaction reference. HashBack echoes it back in the webhook, and
+ * the docs require it to be URL-encoded (ours is already URL-safe).
+ * "HS-" matches the Hela Sasa prefix convention used by the sibling backend.
+ */
+function generateReference() {
+  return 'HS-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
+/**
+ * Builds the request exactly as documented at
+ * https://hashback.co.ke/documentation -> "Initiate STK Push".
+ *
+ * Docs-verified facts this encodes:
+ *   - POST https://api.hashback.co.ke/initiatestk
+ *   - headers: Content-Type: application/json ONLY.
+ *     `Authorization: Bearer` is NOT part of this endpoint - HashBack uses
+ *     Bearer for the SMS API (/sms/*); the key travels in the body here.
+ *   - all five body fields are Required strings.
+ *
+ * Returning a plain descriptor (instead of calling axios inline) lets the
+ * same builder feed the dry-run logger and a local mock server unchanged.
+ */
+function buildProviderRequest(phone, amount, reference) {
+  return {
+    url: HASHBACK_STK_ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: {
+      api_key: HASHBACK_API_KEY,
+      account_id: HASHBACK_ACCOUNT_ID,
+      amount: String(amount), // docs type this as String, e.g. "1"
+      msisdn: phone, // 2547XXXXXXXX, not "phone"
+      reference: reference
+    }
+  };
 }
 
 /**
@@ -157,33 +220,49 @@ app.post('/api/stk-push', async function (req, res) {
     if (!isConfigured()) {
       return res.status(500).json({
         success: false,
-        message: 'Server is not configured. Set HASHBACK_API_KEY and HASHBACK_STK_ENDPOINT in .env and restart the server.'
+        message:
+          'Server is not configured. Set HASHBACK_API_KEY, HASHBACK_ACCOUNT_ID and HASHBACK_STK_ENDPOINT in .env and restart the server.'
+      });
+    }
+
+    const reference = generateReference();
+    const providerRequest = buildProviderRequest(phone, amount, reference);
+
+    /* --- dry run: log the request, never open a socket ---------------- */
+    if (DRY_RUN) {
+      console.log('[stk-push] DRY_RUN - nothing was sent. Request that WOULD go out:');
+      console.log('  ' + providerRequest.method + ' ' + providerRequest.url);
+      console.log('  headers: ' + JSON.stringify(providerRequest.headers));
+      console.log('  body   : ' + JSON.stringify(providerRequest.body, null, 2).replace(/\n/g, '\n           '));
+      return res.json({
+        success: true,
+        dryRun: true,
+        message: 'DRY_RUN is enabled - no request was made to HashBack and no handset was charged.',
+        request: { phone: phone, amount: amount, tier: tier, reference: reference },
+        wouldSend: providerRequest
       });
     }
 
     /* --- forward the STK push to HashBack ---------------------------- */
-    // NOTE: if the HashBack API you signed up with expects different field
-    // names or a different auth header (e.g. "X-API-Key" instead of
-    // "Authorization: Bearer"), adjust them here — everything else stays.
-    const providerPayload = {
-      phone: phone,
-      amount: amount,
-      tier: tier,
-      timestamp: new Date().toISOString()
-    };
-    const providerResponse = await axios.post(HASHBACK_STK_ENDPOINT, providerPayload, {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + HASHBACK_API_KEY
-      },
-      timeout: 30000
+    // Auth is the `api_key` field in the body - NOT an Authorization header.
+    const providerResponse = await axios.post(providerRequest.url, providerRequest.body, {
+      headers: providerRequest.headers,
+      timeout: 15000
     });
+
+    const providerData = providerResponse.data || {};
+    // checkout_id and CheckoutRequestID always carry the same value; accept
+    // either so we keep working if HashBack ever returns only the Safaricom name.
+    const checkoutId = providerData.checkout_id || providerData.CheckoutRequestID || null;
 
     return res.json({
       success: true,
-      message: 'STK push sent. Check the phone for the M-Pesa payment prompt and enter your PIN.',
-      request: { phone: phone, amount: amount, tier: tier },
-      provider: providerResponse.data
+      message:
+        'STK push sent. Check the phone for the M-Pesa payment prompt and enter your PIN. ' +
+        'This only means the prompt was delivered - wait for the webhook or poll /transactionstatus before releasing anything of value.',
+      request: { phone: phone, amount: amount, tier: tier, reference: reference },
+      checkout_id: checkoutId,
+      provider: providerData
     });
   } catch (err) {
     if (err.response) {
@@ -216,4 +295,6 @@ app.listen(PORT, function () {
   console.log('STK push server listening on http://localhost:' + PORT);
   console.log('POST /api/stk-push  (tiers: ' + ALLOWED_TIERS.join(', ') + ')');
   console.log('HashBack endpoint: ' + (isConfigured() ? HASHBACK_STK_ENDPOINT : 'NOT CONFIGURED (edit .env)'));
+  console.log('HashBack account id: ' + (HASHBACK_ACCOUNT_ID || '(missing)'));
+  console.log('Dry run: ' + (DRY_RUN ? 'ON - requests are logged, never sent' : 'off'));
 });
